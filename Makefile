@@ -9,6 +9,11 @@ test:
 build:
 	$(LINUX_AMD64) go build -o gorecipes .
 
+# Usage: HOST=0.0.0.0 PORT=3000 make start
+start: build
+	./gorecipes
+
+
 dk-build: build
 	docker build -t gorecipes .
 
