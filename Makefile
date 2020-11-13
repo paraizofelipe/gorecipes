@@ -1,5 +1,8 @@
 LINUX_AMD64 = CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
+get-lint:
+	go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.32.2
+
 lint:
 	golangci-lint run ./...
 
@@ -12,7 +15,6 @@ build:
 # Usage: HOST=0.0.0.0 PORT=3000 make start
 start: build
 	./gorecipes
-
 
 dk-build: build
 	docker build -t gorecipes .
