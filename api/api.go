@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/paraizofelipe/gorecipes/model"
 	"github.com/paraizofelipe/gorecipes/settings"
@@ -79,10 +80,16 @@ func SearchGif(title string) (gif string, err error) {
 	return resp["data"].([]interface{})[0].(map[string]interface{})["url"].(string), nil
 }
 
-func AsyncSearchRecipes(ingredients string) (ch chan model.APIRecipeResponse, err error) {
+func AsyncSearchRecipes(ingredients string) <-chan model.APIRecipeResponse {
+	var (
+		err    error
+		recipe model.APIRecipeResponse
+	)
+	ch := make(chan model.APIRecipeResponse)
+
 	go func() {
 		defer close(ch)
-		recipe, err := SearchRecipes(ingredients)
+		recipe, err = SearchRecipes(ingredients)
 		if err != nil {
 			log.Println(err)
 			return
@@ -90,18 +97,34 @@ func AsyncSearchRecipes(ingredients string) (ch chan model.APIRecipeResponse, er
 		ch <- recipe
 	}()
 
-	return
+	return ch
 }
 
-func AsyncSearchGif(title string) (ch chan string, err error) {
-	go func() {
-		defer close(ch)
-		gif, err := SearchGif(title)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		ch <- gif
-	}()
-	return
+func AsyncSearchGif(title string, wg *sync.WaitGroup, resultGif *string) {
+	var err error
+
+	defer wg.Done()
+	if *resultGif, err = SearchGif(title); err != nil {
+		log.Println(err)
+	}
 }
+
+// func AsyncSearchGif(title string) <-chan string {
+//     var (
+//         gif string
+//         err error
+//     )
+//     ch := make(chan string)
+//
+//     go func() {
+//         defer close(ch)
+//         gif, err = SearchGif(title)
+//         if err != nil {
+//             log.Println(err)
+//             return
+//         }
+//         ch <- gif
+//     }()
+//
+//     return ch
+// }

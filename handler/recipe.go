@@ -6,12 +6,13 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/paraizofelipe/gorecipes/api"
 	"github.com/paraizofelipe/gorecipes/model"
 )
 
-type Response struct {
+type RecipeResponse struct {
 	Keywords []string       `json:"keywords"`
 	Recipes  []model.Recipe `json:"recipes"`
 }
@@ -29,7 +30,10 @@ func getGif(title string, ch chan string) {
 }
 
 func (h Handler) APIRecipeToRecipe(apiRecipes []model.APIRecipe) (recipes []model.Recipe, err error) {
-	var recipe model.Recipe
+	var (
+		recipe model.Recipe
+		wg     sync.WaitGroup
+	)
 	for _, apiRecipe := range apiRecipes {
 		recipe.Title = apiRecipe.Title
 		recipe.Link = apiRecipe.Href
@@ -37,9 +41,13 @@ func (h Handler) APIRecipeToRecipe(apiRecipes []model.APIRecipe) (recipes []mode
 		recipe.Ingredients = strings.Split(apiRecipe.Ingredients, ",")
 		sort.Strings(recipe.Ingredients)
 
-		recipe.Gif, err = <-api.AsyncSearchGif(recipe.Title)
+		wg.Add(1)
+		go api.AsyncSearchGif(recipe.Title, &wg, &recipe.Gif)
+		// recipe.Gif = <-api.AsyncSearchGif(recipe.Title)
 		recipes = append(recipes, recipe)
 	}
+	wg.Wait()
+
 	return
 }
 
@@ -48,7 +56,7 @@ func (h Handler) getRecipes() http.HandlerFunc {
 		var (
 			err         error
 			recipes     []model.Recipe
-			response    Response
+			response    RecipeResponse
 			respRecipe  model.APIRecipeResponse
 			ingredients string
 		)
