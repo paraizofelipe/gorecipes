@@ -60,17 +60,17 @@ func (r *Router) Add(pattern, method string, handler http.Handler) {
 }
 
 // ServerHTTP ---
-func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	for _, route := range router.routes {
-		if matched, _ := regexp.MatchString(route.Pattern, r.URL.Path); matched {
-			if h, registered := route.ActionHandlers[r.Method]; registered {
-				if router.debug {
-					router.trace(r)
+func (r *Router) ServerHTTP(respWriter http.ResponseWriter, req *http.Request) {
+	for _, route := range r.routes {
+		if matched, _ := regexp.MatchString(route.Pattern, req.URL.Path); matched {
+			if h, registered := route.ActionHandlers[req.Method]; registered {
+				if r.debug {
+					r.trace(req)
 				}
-				r = r.WithContext(buildContext(route.Pattern, r))
-				h.ServeHTTP(w, r)
+				req = req.WithContext(buildContext(route.Pattern, req))
+				h.ServeHTTP(respWriter, req)
 			} else {
-				http.NotFound(w, r)
+				http.NotFound(respWriter, req)
 			}
 			return
 		}

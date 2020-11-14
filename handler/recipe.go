@@ -25,15 +25,13 @@ func (h Handler) RecipeHandler(w http.ResponseWriter, r *http.Request) {
 	router.ServeHTTP(w, r)
 }
 
-func getGif(title string, ch chan string) {
-
-}
-
+// APIRecipeToRecipe ---
 func (h Handler) APIRecipeToRecipe(apiRecipes []model.APIRecipe) (recipes []model.Recipe, err error) {
 	var (
 		recipe model.Recipe
 		wg     sync.WaitGroup
 	)
+
 	for _, apiRecipe := range apiRecipes {
 		recipe.Title = apiRecipe.Title
 		recipe.Link = apiRecipe.Href
@@ -43,7 +41,7 @@ func (h Handler) APIRecipeToRecipe(apiRecipes []model.APIRecipe) (recipes []mode
 
 		wg.Add(1)
 		go api.AsyncSearchGif(recipe.Title, &wg, &recipe.Gif)
-		// recipe.Gif = <-api.AsyncSearchGif(recipe.Title)
+
 		recipes = append(recipes, recipe)
 	}
 	wg.Wait()
@@ -70,7 +68,7 @@ func (h Handler) getRecipes() http.HandlerFunc {
 			http.Error(w, "error fetching recipe", http.StatusInternalServerError)
 			return
 		}
-		if len(respRecipe.Results) <= 0 {
+		if len(respRecipe.Results) == 0 {
 			log.Println(err)
 			http.Error(w, "recipes not found", http.StatusNotFound)
 			return

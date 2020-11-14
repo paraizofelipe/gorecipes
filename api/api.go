@@ -49,9 +49,11 @@ func SearchRecipes(ingredients string) (recipes model.APIRecipeResponse, err err
 	if baseURL, err = url.Parse(recipeURL); err != nil {
 		return
 	}
+
 	params := url.Values{}
 	params.Add("i", ingredients)
 	baseURL.RawQuery = params.Encode()
+
 	if err = makeRequest("GET", baseURL.String(), &recipes); err != nil {
 		return
 	}
@@ -68,6 +70,7 @@ func SearchGif(title string) (gif string, err error) {
 	if baseURL, err = url.Parse(gifURL); err != nil {
 		return
 	}
+
 	params := url.Values{}
 	params.Add("api_key", settings.GyphToken)
 	params.Add("limit", "1")
@@ -80,26 +83,17 @@ func SearchGif(title string) (gif string, err error) {
 	return resp["data"].([]interface{})[0].(map[string]interface{})["url"].(string), nil
 }
 
-func AsyncSearchRecipes(ingredients string) <-chan model.APIRecipeResponse {
-	var (
-		err    error
-		recipe model.APIRecipeResponse
-	)
-	ch := make(chan model.APIRecipeResponse)
+// AsyncSearchRecipes ---
+func AsyncSearchRecipes(ingredients string, wg *sync.WaitGroup, resultRecipe *model.APIRecipeResponse) {
+	var err error
 
-	go func() {
-		defer close(ch)
-		recipe, err = SearchRecipes(ingredients)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		ch <- recipe
-	}()
-
-	return ch
+	if *resultRecipe, err = SearchRecipes(ingredients); err != nil {
+		log.Println(err)
+		return
+	}
 }
 
+// AsyncSearchGif ---
 func AsyncSearchGif(title string, wg *sync.WaitGroup, resultGif *string) {
 	var err error
 
@@ -108,23 +102,3 @@ func AsyncSearchGif(title string, wg *sync.WaitGroup, resultGif *string) {
 		log.Println(err)
 	}
 }
-
-// func AsyncSearchGif(title string) <-chan string {
-//     var (
-//         gif string
-//         err error
-//     )
-//     ch := make(chan string)
-//
-//     go func() {
-//         defer close(ch)
-//         gif, err = SearchGif(title)
-//         if err != nil {
-//             log.Println(err)
-//             return
-//         }
-//         ch <- gif
-//     }()
-//
-//     return ch
-// }
