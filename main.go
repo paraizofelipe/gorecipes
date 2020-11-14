@@ -7,11 +7,7 @@ import (
 	"os"
 
 	"github.com/paraizofelipe/gorecipes/handler"
-)
-
-var (
-	HOST = os.Getenv("HOST")
-	PORT = os.Getenv("PORT")
+	"github.com/paraizofelipe/gorecipes/settings"
 )
 
 func main() {
@@ -21,7 +17,7 @@ func main() {
 
 	http.HandleFunc("/api/recipes/", h.RecipeHandler)
 
-	url := fmt.Sprintf("%s:%s", HOST, PORT)
+	url := fmt.Sprintf("%s:%s", settings.Host, settings.Port)
 
 	log.Printf("🚀 Server listening in %s 🚀", url)
 

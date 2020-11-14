@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/paraizofelipe/gorecipes/api"
@@ -23,19 +24,22 @@ func (h Handler) RecipeHandler(w http.ResponseWriter, r *http.Request) {
 	router.ServeHTTP(w, r)
 }
 
+func getGif(title string, ch chan string) {
+
+}
+
 func (h Handler) APIRecipeToRecipe(apiRecipes []model.APIRecipe) (recipes []model.Recipe, err error) {
 	var recipe model.Recipe
 	for _, apiRecipe := range apiRecipes {
 		recipe.Title = apiRecipe.Title
 		recipe.Link = apiRecipe.Href
+
 		recipe.Ingredients = strings.Split(apiRecipe.Ingredients, ",")
-		if recipe.Gif, err = api.SearchGif(recipe.Title); err != nil {
-			log.Println(err)
-			return
-		}
+		sort.Strings(recipe.Ingredients)
+
+		recipe.Gif, err = <-api.AsyncSearchGif(recipe.Title)
 		recipes = append(recipes, recipe)
 	}
-
 	return
 }
 
@@ -68,13 +72,14 @@ func (h Handler) getRecipes() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.Recipes = recipes
 
+		response.Recipes = recipes
+		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+
 		r = r.WithContext(ctx)
 	}
 }

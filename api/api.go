@@ -3,12 +3,13 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/paraizofelipe/gorecipes/model"
+	"github.com/paraizofelipe/gorecipes/settings"
 )
 
 const (
@@ -43,8 +44,14 @@ func makeRequest(method string, url string, result interface{}) error {
 
 // SearchRecipes ---
 func SearchRecipes(ingredients string) (recipes model.APIRecipeResponse, err error) {
-	url := fmt.Sprintf("%s?i=%s", recipeURL, ingredients)
-	if err = makeRequest("GET", url, &recipes); err != nil {
+	var baseURL *url.URL
+	if baseURL, err = url.Parse(recipeURL); err != nil {
+		return
+	}
+	params := url.Values{}
+	params.Add("i", ingredients)
+	baseURL.RawQuery = params.Encode()
+	if err = makeRequest("GET", baseURL.String(), &recipes); err != nil {
 		return
 	}
 	return
@@ -61,7 +68,7 @@ func SearchGif(title string) (gif string, err error) {
 		return
 	}
 	params := url.Values{}
-	params.Add("api_key", "pPiMNFkdnBt4wGmBiJ9YCryAw3lHJk98")
+	params.Add("api_key", settings.GyphToken)
 	params.Add("limit", "1")
 	params.Add("q", strings.TrimSpace(title))
 	baseURL.RawQuery = params.Encode()
@@ -69,6 +76,32 @@ func SearchGif(title string) (gif string, err error) {
 	if err = makeRequest("GET", baseURL.String(), &resp); err != nil {
 		return
 	}
-	gif = resp["data"].([]interface{})[0].(map[string]interface{})["url"].(string)
+	return resp["data"].([]interface{})[0].(map[string]interface{})["url"].(string), nil
+}
+
+func AsyncSearchRecipes(ingredients string) (ch chan model.APIRecipeResponse, err error) {
+	go func() {
+		defer close(ch)
+		recipe, err := SearchRecipes(ingredients)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		ch <- recipe
+	}()
+
+	return
+}
+
+func AsyncSearchGif(title string) (ch chan string, err error) {
+	go func() {
+		defer close(ch)
+		gif, err := SearchGif(title)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		ch <- gif
+	}()
 	return
 }
