@@ -1,6 +1,8 @@
 package handler
 
-import "log"
+import (
+	"github.com/labstack/echo"
+)
 
 // ErrorResponse ---
 type ErrorResponse struct {
@@ -10,11 +12,11 @@ type ErrorResponse struct {
 
 // Handler ---
 type Handler struct {
-	Logger *log.Logger
+	Logger echo.Logger
 }
 
 // NewHandler ---
-func New(logger *log.Logger) *Handler {
+func New(logger echo.Logger) *Handler {
 	return &Handler{
 		Logger: logger,
 	}

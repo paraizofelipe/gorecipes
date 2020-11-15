@@ -1,4 +1,4 @@
-package api
+package externalapi
 
 import (
 	"encoding/json"
@@ -87,6 +87,7 @@ func SearchGif(title string) (gif string, err error) {
 func AsyncSearchRecipes(ingredients string, wg *sync.WaitGroup, resultRecipe *model.APIRecipeResponse) {
 	var err error
 
+	defer wg.Done()
 	if *resultRecipe, err = SearchRecipes(ingredients); err != nil {
 		log.Println(err)
 		return
@@ -100,5 +101,6 @@ func AsyncSearchGif(title string, wg *sync.WaitGroup, resultGif *string) {
 	defer wg.Done()
 	if *resultGif, err = SearchGif(title); err != nil {
 		log.Println(err)
+		return
 	}
 }
