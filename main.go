@@ -10,6 +10,8 @@ import (
 
 func main() {
 	e := echo.New()
+	e.HideBanner = true
+	e.Logger.SetLevel(settings.Log)
 
 	h := handler.New(e.Logger)
 	v1 := e.Group("/api")
@@ -17,6 +19,5 @@ func main() {
 
 	e.GET("/api/recipes", h.Recipes)
 	fullHost := fmt.Sprintf("%s:%s", settings.Host, settings.Port)
-	// log.Printf("🚀 Server listening in %s 🚀", url)
 	e.Logger.Fatal(e.Start(fullHost))
 }
