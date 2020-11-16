@@ -108,17 +108,6 @@ Run with Makefile:
 }
 ```
 
-# Built With
-
-* [Arch linux](https://www.archlinux.org/) - Operational sistem
-* [Neovim](https://neovim.io/)  - Editor Text
-* [go](https://golang.org/) - The GO programing language.
-* [echo](https://echo.labstack.com/) - Minimalist Go web framework 
-
-# Versioning
-
-This project use SemVer for versioning. For the versions available, see the tags on this repository.
-
 # Authors
 
 Felipe Paraizo - Initial work - [paraizo](http://paraizo.dev)
