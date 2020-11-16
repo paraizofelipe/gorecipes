@@ -19,8 +19,8 @@ start: build
 dk-build: build
 	docker build -t gorecipes .
 
-dk-start:
-	docker run --name gorecipes gorecipes:latest
+dk-start: dk-build
+	docker run --rm -p 3000:3000 --env-file .env --name gorecipes gorecipes:latest
 
 dk-logs:
 	docker logs --tail 100 -f gorecipes
