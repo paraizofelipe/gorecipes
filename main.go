@@ -17,7 +17,6 @@ func main() {
 	v1 := e.Group("/api")
 	h.Register(v1)
 
-	e.GET("/api/recipes", h.Recipes)
 	fullHost := fmt.Sprintf("%s:%s", settings.Host, settings.Port)
 	e.Logger.Fatal(e.Start(fullHost))
 }

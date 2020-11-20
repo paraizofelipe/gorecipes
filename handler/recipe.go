@@ -7,11 +7,26 @@ import (
 	"sync"
 
 	"github.com/labstack/echo"
+	"github.com/paraizofelipe/gorecipes/external"
 	"github.com/paraizofelipe/gorecipes/model"
 )
 
+type Recipe struct {
+	Logger         echo.Logger
+	GifSearcher    external.GifSearcher
+	RecipeSearcher external.RecipeSearcher
+}
+
+func NewRecipe(logger echo.Logger) RecipeHandler {
+	return Recipe{
+		Logger:         logger,
+		GifSearcher:    external.NewGif(logger),
+		RecipeSearcher: external.NewRecipe(logger),
+	}
+}
+
 // APIRecipeToRecipe convert a list of ApiRecipe in a struct Recipe
-func (h Handler) APIRecipeToRecipe(apiRecipes []model.APIRecipe) (recipes []model.Recipe, err error) {
+func (h Recipe) APIRecipeToRecipe(apiRecipes []model.APIRecipe) (recipes []model.Recipe, err error) {
 	var (
 		wg sync.WaitGroup
 	)
@@ -27,7 +42,13 @@ func (h Handler) APIRecipeToRecipe(apiRecipes []model.APIRecipe) (recipes []mode
 		sort.Strings(recipes[index].Ingredients)
 
 		wg.Add(1)
-		go h.ExternalAPI.Gif.AsyncSearch(recipes[index].Title, &wg, &recipes[index].Gif)
+		go func(title string, wg *sync.WaitGroup, resultGif *string) {
+			defer wg.Done()
+			if *resultGif, err = h.GifSearcher.Search(title); err != nil {
+				h.Logger.Error(err)
+				return
+			}
+		}(recipes[index].Title, &wg, &recipes[index].Gif)
 	}
 	wg.Wait()
 
@@ -35,7 +56,7 @@ func (h Handler) APIRecipeToRecipe(apiRecipes []model.APIRecipe) (recipes []mode
 }
 
 // Recipes handles requests made to the endpoint /recipes
-func (h Handler) Recipes(c echo.Context) (err error) {
+func (h Recipe) GetRecipes(c echo.Context) (err error) {
 	var (
 		recipes       []model.Recipe
 		recipeResp    model.RecipeResponse
@@ -43,7 +64,7 @@ func (h Handler) Recipes(c echo.Context) (err error) {
 	)
 
 	ingredients := c.QueryParam("i")
-	if recipeAPIResp, err = h.ExternalAPI.Recipe.Search(ingredients); err != nil {
+	if recipeAPIResp, err = h.RecipeSearcher.Search(ingredients); err != nil {
 		h.Logger.Error(err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
