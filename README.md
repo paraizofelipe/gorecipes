@@ -1,6 +1,6 @@
 # gorecipes
 
-This project aims to develop a Rest API to control phone call records and generate bills.
+This project aims to develop an API Rest to return recipes of ingredients informed through parameters in URL.
 
 # Getting Started
 
@@ -9,7 +9,7 @@ Consult [deployment](#deployment) item for notes on how to deploy the project on
 
 # Prerequisites
 
-This package is built with go1.15, and all you need is provide with the go standard library.
+This package is built with go1.15 and all you need is provide with the go standard library.
 
 # Installing
 
@@ -20,13 +20,15 @@ This is what you need to install the application from the source code:
     go install
 ```
 
-## Caution!
+### Cautions!
 
-Before executing any command create your file with the environment variables by copying from lcoal.env
+Before executing any command create your file with the environment variables by copying from local.env. You will also need a Giphy API token.
 
 ```shell script
     cat local.env > .env
 ``` 
+
+## Run in docker 
 
 To build the docker version you can use the `Makefile`:
 
@@ -36,9 +38,9 @@ To build the docker version you can use the `Makefile`:
 
 # Running the tests
 
-Until I finish this README there is not so much Unit tests written.
+Until I finish this README there is not so many Unit tests written.
 
-But I will try to coverage unless 70% of unit tests for this code as soon as possible.
+But I will try to coverage unless 75% of unit tests for this code as soon as possible.
 
 You can run tests like this:
 
@@ -54,11 +56,9 @@ To run this code locally for test purposes use:
 
 # Deployment
 
-This codebase is cloud-native by design so you can use lots of environments to make this run anywhere you want.
+This codebase is cloud-native by design, so you can use lots of environments to make this run anywhere you want.
 
-But to make this even easier to you the codebase also provides a Dockerfile.
-
-There is also a Makefile to make all this even easier.
+To make it easier, the code base also provides a Dockerfile, but to make it even easier there is a Makefile.
 
 Run with Makefile:
 
@@ -68,7 +68,11 @@ Run with Makefile:
 
 # API
 
-## POST - /api/recipes
+## GET - /api/recipes
+
+Use the **"i"** parameter in the query string to enter the ingredients used in the recipe.
+
+**Example:** http://localhost:3000/api/recipes?i=tomato,onion,orange
 
 ### Body of response
 
