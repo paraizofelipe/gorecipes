@@ -1,29 +1,35 @@
 package external
 
 import (
+	"encoding/json"
 	"net/url"
 	"strings"
-	"sync"
 
 	"github.com/labstack/echo"
+	"github.com/paraizofelipe/gorecipes/httpclient"
 	"github.com/paraizofelipe/gorecipes/settings"
 )
 
-type APIGif struct {
-	Logger echo.Logger
+const gifURL string = "https://api.giphy.com/v1/gifs/search"
+
+type Gif struct {
+	Logger     echo.Logger
+	HTTPClient httpclient.Requester
 }
 
-func NewAPIGif(logger echo.Logger) APIGif {
-	return APIGif{
-		Logger: logger,
+func NewGif(logger echo.Logger) *Gif {
+	return &Gif{
+		HTTPClient: httpclient.HTTPClient{},
+		Logger:     logger,
 	}
 }
 
 // Search do requests to API Giphy
-func (a APIGif) Search(title string) (gif string, err error) {
+func (g Gif) Search(title string) (gif string, err error) {
 	var (
+		result  map[string]interface{}
 		baseURL *url.URL
-		resp    map[string]interface{}
+		resp    []byte
 	)
 
 	if baseURL, err = url.Parse(gifURL); err != nil {
@@ -36,19 +42,12 @@ func (a APIGif) Search(title string) (gif string, err error) {
 	params.Add("q", strings.TrimSpace(title))
 	baseURL.RawQuery = params.Encode()
 
-	if err = makeRequest("GET", baseURL.String(), &resp); err != nil {
+	g.Logger.Info(baseURL.String())
+	if resp, err = g.HTTPClient.MakeRequest("GET", baseURL.String()); err != nil {
 		return
 	}
-	return resp["data"].([]interface{})[0].(map[string]interface{})["url"].(string), nil
-}
-
-// AsyncSearch do asynchronous requests to API Giphy
-func (a APIGif) AsyncSearch(title string, wg *sync.WaitGroup, resultGif *string) {
-	var err error
-
-	defer wg.Done()
-	if *resultGif, err = a.Search(title); err != nil {
-		a.Logger.Error(err)
+	if err = json.Unmarshal(resp, &result); err != nil {
 		return
 	}
+	return result["data"].([]interface{})[0].(map[string]interface{})["url"].(string), nil
 }

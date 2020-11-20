@@ -1,26 +1,34 @@
 package external
 
 import (
+	"encoding/json"
 	"net/url"
-	"sync"
 
 	"github.com/labstack/echo"
+	"github.com/paraizofelipe/gorecipes/httpclient"
 	"github.com/paraizofelipe/gorecipes/model"
 )
 
-type APIRecipe struct {
-	Logger echo.Logger
+const recipeURL string = "http://www.recipepuppy.com/api"
+
+type Recipe struct {
+	Logger     echo.Logger
+	HTTPClient httpclient.Requester
 }
 
-func NewAPIRecipe(logger echo.Logger) APIRecipe {
-	return APIRecipe{
-		Logger: logger,
+func NewRecipe(logger echo.Logger) *Recipe {
+	return &Recipe{
+		HTTPClient: httpclient.HTTPClient{},
+		Logger:     logger,
 	}
 }
 
 // Search do requests to API Recipe Puppy
-func (a APIRecipe) Search(ingredients string) (recipes model.APIRecipeResponse, err error) {
-	var baseURL *url.URL
+func (r Recipe) Search(ingredients string) (recipes model.APIRecipeResponse, err error) {
+	var (
+		resp    []byte
+		baseURL *url.URL
+	)
 	if baseURL, err = url.Parse(recipeURL); err != nil {
 		return
 	}
@@ -29,19 +37,12 @@ func (a APIRecipe) Search(ingredients string) (recipes model.APIRecipeResponse, 
 	params.Add("i", ingredients)
 	baseURL.RawQuery = params.Encode()
 
-	if err = makeRequest("GET", baseURL.String(), &recipes); err != nil {
+	r.Logger.Info(baseURL.String())
+	if resp, err = r.HTTPClient.MakeRequest("GET", baseURL.String()); err != nil {
+		return
+	}
+	if err = json.Unmarshal(resp, &recipes); err != nil {
 		return
 	}
 	return
-}
-
-// AsyncSearch do asynchronous requests to API Recipe Puppy
-func (a APIRecipe) AsyncSearch(ingredients string, wg *sync.WaitGroup, resultRecipe *model.APIRecipeResponse) {
-	var err error
-
-	defer wg.Done()
-	if *resultRecipe, err = a.Search(ingredients); err != nil {
-		a.Logger.Error(err)
-		return
-	}
 }
