@@ -7,7 +7,7 @@ lint:
 	golangci-lint run ./...
 
 test:
-	go test ./... -count 1 -v
+	go test ./... -cover -count 1 -v
 
 build:
 	$(LINUX_AMD64) go build -o gorecipes .
